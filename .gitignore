@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environment
+.venv/
+
+# SQLite database
+*.db
+*.sqlite
+*.sqlite3
+
+# Runtime files
+logs/*
+backups/*
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+
+# OS
+.DS_Store
