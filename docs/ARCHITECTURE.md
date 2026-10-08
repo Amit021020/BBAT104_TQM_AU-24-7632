@@ -2,15 +2,15 @@
 
 ## 1. Overview
 
-The Hospital Management System is a Python based desktop application developed for the BBAT104 TQM project.
+The Hospital Management System is a Python based desktop application developed as part of the BBAT104 Fundamentals of TQM project.
 
-The main purpose of the system is to manage basic hospital information such as patients, doctors, appointments, medical records and billing.
+The system is designed to manage basic hospital information such as patients, doctors, appointments, medical records, users and billing.
 
-The system uses CustomTkinter for the user interface and SQLite for storing the data.
+The project uses SQLite as the database and Python services to perform the main operations.
 
-The project also focuses on improving reliability through the Q01 quality goal.
+For the assigned quality goal Q01, the project focuses on improving the reliability of database operations.
 
-The five reliability features are:
+The five reliability features implemented in the system are:
 
 * Automatic Backup
 * Audit Log
@@ -22,57 +22,30 @@ The five reliability features are:
 
 ## 2. Technology Used
 
-The main technologies used in this project are:
+The main technologies used in the project are:
 
 * Python 3.14.4
-* CustomTkinter
-* SQLite
+* SQLite3
 * Pandas
 * Matplotlib
-* Git and GitHub
+* CustomTkinter
+* Git
+* GitHub
+
+CustomTkinter is planned for the desktop user interface, while the current implementation mainly focuses on the database and service layer.
 
 ---
 
-## 3. Basic Architecture
+## 3. System Architecture
 
-The application follows a simple layered structure.
+The system follows a simple layered architecture.
 
-```text
-User
-  |
-  v
-Login Screen
-  |
-  v
-Dashboard
-  |
-  +-------------------+
-  |                   |
-  v                   v
-Hospital Modules    User Roles
-  |
-  +---- Patients
-  |
-  +---- Doctors
-  |
-  +---- Appointments
-  |
-  +---- Medical Records
-  |
-  +---- Billing
-  |
-  v
-Validation
-  |
-  v
-SQLite Database
-  |
-  +---- Audit Log
-  |
-  +---- Backup
-```
+The following diagram shows the main layers and components of the Hospital Management System.
 
-The user interacts with the application through the GUI. The application processes the request, validates the input and then performs the required database operation.
+![Hospital Management System Architecture](assets/architecture.png)
+The service layer is responsible for performing the main hospital management operations.
+
+The Reliable Operation Service connects the normal database operations with the Q01 reliability features.
 
 ---
 
@@ -80,264 +53,402 @@ The user interacts with the application through the GUI. The application process
 
 ### 4.1 User Interface
 
-The GUI will be developed using CustomTkinter.
+The planned user interface will use CustomTkinter.
 
-It will contain the login screen, dashboard and different screens for managing hospital records.
+The interface will provide screens for login, dashboard and hospital management modules.
 
-The interface will be kept simple so that users can easily move between the different modules.
-
----
-
-### 4.2 Authentication
-
-The login system will verify the username and password before allowing access to the application.
-
-After login, the system will identify the user's role.
-
-Different users will have different permissions.
-
-For example:
-
-* Administrator can manage most parts of the system.
-* Doctor can access patient and medical record related functions.
-* Receptionist can manage patients and appointments.
+The GUI will communicate with the service layer instead of directly modifying the database.
 
 ---
 
-### 4.3 Patient Management
+### 4.2 Service Layer
 
-The patient module will be used to manage patient information.
+The service layer contains separate services for the main hospital modules.
 
-It will support:
+The current services include:
 
-* Adding patients
-* Viewing patients
-* Updating patient information
-* Deleting patients
+* Patient Service
+* Doctor Service
+* Appointment Service
+* Medical Record Service
+* Bill Service
+* User Service
 
-Input validation will be performed before saving the information.
+Each service is responsible for the CRUD operations related to its module.
 
----
-
-### 4.4 Doctor Management
-
-The doctor module will store information about doctors working in the hospital.
-
-It will support the basic CRUD operations:
-
-* Create
-* Read
-* Update
-* Delete
+This separation makes the project easier to maintain and test.
 
 ---
 
-### 4.5 Appointment Management
+### 4.3 Reliable Operation Service
 
-The appointment module will connect patients with doctors.
+The `reliable_operation_service.py` acts as the main integration point for the Q01 reliability features.
 
-It will store information such as:
+Before a database write operation is completed, the service can perform the following steps:
+
+```text
+Check Permission
+      |
+      v
+Validate Input
+      |
+      v
+Create Backup
+      |
+      v
+Execute Database Operation
+      |
+      v
+Create Audit Log
+```
+
+If the operation fails, the error recovery mechanism performs a rollback where possible and records the failed operation.
+
+---
+
+### 4.4 Patient Management
+
+The patient service manages patient information.
+
+The supported operations are:
+
+* Create patient
+* View patients
+* Update patient
+* Delete patient
+
+Patient input is checked using the validation service before database operations are performed.
+
+---
+
+### 4.5 Doctor Management
+
+The doctor service manages information about doctors.
+
+The supported operations are:
+
+* Create doctor
+* View doctors
+* Update doctor
+* Delete doctor
+
+Doctor data is validated before it is stored in the database.
+
+---
+
+### 4.6 Appointment Management
+
+The appointment service manages appointments between patients and doctors.
+
+An appointment contains information such as:
 
 * Patient
 * Doctor
-* Date
-* Time
+* Appointment date
+* Appointment time
 * Reason
-* Appointment status
+* Status
 
-The system will validate the appointment information before saving it.
-
----
-
-### 4.6 Medical Records
-
-The medical record module will store information related to a patient's diagnosis and treatment.
-
-Doctors or authorized users will be able to create and update medical records according to their permissions.
+Foreign key constraints are enabled in SQLite so that appointments cannot reference invalid patients or doctors.
 
 ---
 
-### 4.7 Billing
+### 4.7 Medical Records
 
-The billing module will manage basic billing information for patients.
+The medical record service manages patient medical records.
 
-It will store information such as:
+A medical record contains information such as:
+
+* Patient
+* Doctor
+* Diagnosis
+* Prescription
+* Notes
+* Record date
+
+Access to medical record operations can be controlled using the role service.
+
+---
+
+### 4.8 Billing
+
+The bill service manages basic patient billing information.
+
+A bill contains:
 
 * Patient
 * Amount
 * Payment status
-* Date
+* Bill date
+
+The validation service checks the billing information before it is stored.
+
+For example, a negative bill amount is rejected by the validation layer.
+
+---
+
+### 4.9 User Management
+
+The user service manages application users.
+
+Each user has:
+
+* Username
+* Password hash
+* Role
+* Account status
+* Creation date
+
+The available roles in the current implementation are:
+
+* Admin
+* Doctor
+* Staff
+
+The role service checks whether a user has permission to perform a particular operation.
 
 ---
 
 ## 5. Database
 
-SQLite will be used as the database because this is a desktop based academic project and does not require a separate database server.
+SQLite3 is used because the project is a desktop based academic application and does not require a separate database server.
 
-The database will contain tables for:
+The database currently contains the following tables:
 
 ```text
-Users
-Patients
-Doctors
-Appointments
-Medical Records
-Bills
-Audit Logs
+users
+patients
+doctors
+appointments
+medical_records
+bills
+audit_logs
 ```
 
-The exact fields and relationships between these tables will be finalized during the database design stage.
+The database connection enables SQLite foreign key support.
+
+This helps maintain relationships between patients, doctors, appointments and medical records.
 
 ---
 
-## 6. Reliability Features
+## 6. Q01 Reliability Features
 
-Reliability is the main quality goal assigned to this project.
+### 6.1 Automatic Backup
 
-### Automatic Backup
+The backup service creates a copy of the SQLite database before important write operations.
 
-The system will create backups of the SQLite database.
+The backups are stored in the project's `backups` directory.
 
-The purpose of the backup is to reduce the risk of losing hospital information if the main database is damaged or deleted.
-
----
-
-### Audit Log
-
-Important actions performed by users will be recorded.
-
-An audit entry will contain information such as:
+Example:
 
 ```text
-User
+backups/
+    hospital_backup_YYYYMMDD_HHMMSS.db
+```
+
+The timestamp helps identify when each backup was created.
+
+The backup service also provides functions to list and restore available backups.
+
+---
+
+### 6.2 Audit Log
+
+The audit service records important database operations.
+
+An audit record can contain:
+
+```text
+User ID
 Action
 Module
+Record ID
+Description
 Date/Time
-Result
 ```
 
-This will make it possible to identify what action was performed and by whom.
+Both successful and failed operations can be recorded.
+
+The audit logs are stored in the `audit_logs` table.
+
+This provides traceability and helps identify what operation was performed.
 
 ---
 
-### Input Validation
+### 6.3 Input Validation
 
-The application will validate data before storing it in the database.
+Input validation is performed before data is written to the database.
+
+The validation service contains separate validation functions for the main modules.
 
 Examples include:
 
 * Required fields
-* Valid phone numbers
-* Valid dates
-* Numeric values
-* Duplicate records
+* Patient age range
+* Phone number format
+* Doctor email format
+* Bill amount validation
+* User role validation
 
-The main purpose is to prevent incorrect data from entering the system.
+Invalid input is rejected before the database operation is executed.
 
----
-
-### Error Recovery
-
-The application will handle expected errors instead of simply closing.
-
-For example, if a database operation fails, the system should show a useful error message and allow the user to continue where possible.
-
-Errors will also be logged for later analysis.
-
----
-
-### User Roles
-
-The system will use role-based access control.
-
-Users will only be allowed to perform operations that are appropriate for their role.
-
-This reduces the possibility of unauthorized changes to hospital records.
-
----
-
-## 7. Data Flow
-
-The basic flow of the application is:
+For example:
 
 ```text
-User
- |
- v
-GUI
- |
- v
-Check User Role
- |
- v
+Bill Amount = -500
+
+        |
+        v
+
+Input Validation
+
+        |
+        v
+
+Validation Failed
+
+        |
+        v
+
+Database Operation Stopped
+```
+
+---
+
+### 6.4 Error Recovery
+
+Database operations are executed through the error recovery service.
+
+If an exception occurs:
+
+```text
+Database Operation
+        |
+        v
+     Exception
+        |
+        v
+     Rollback
+        |
+        v
+Return Error Information
+```
+
+The purpose is to prevent partially completed database operations and provide a controlled error response.
+
+---
+
+### 6.5 User Roles
+
+The role service provides role-based permission checking.
+
+The current roles are:
+
+| Role   | General Access                                |
+| ------ | --------------------------------------------- |
+| Admin  | Full system access                            |
+| Doctor | Patient and medical record related operations |
+| Staff  | Operational hospital management functions     |
+
+The permission check is performed before a protected database operation.
+
+If the user does not have the required permission, the operation is stopped.
+
+---
+
+## 7. Database Operation Flow
+
+The general reliable operation flow is:
+
+```text
+User Request
+     |
+     v
+Check User Permission
+     |
+     v
 Validate Input
- |
- v
-Perform Operation
- |
- v
-SQLite Database
- |
- +-------> Audit Log
- |
- +-------> Backup
- |
- v
-Show Result to User
+     |
+     v
+Create Database Backup
+     |
+     v
+Execute Database Operation
+     |
+     +----------------------+
+     |                      |
+   Success                 Error
+     |                      |
+     v                      v
+Commit                  Rollback
+     |                      |
+     v                      v
+Create Audit Log       Failed Audit Log
+     |                      |
+     +----------+-----------+
+                |
+                v
+          Return Result
 ```
 
-If an error occurs during the operation:
-
-```text
-Operation
-    |
-    v
-Error
-    |
-    v
-Error Handler
-    |
-    +----> Log Error
-    |
-    +----> Show Error Message
-    |
-    +----> Recover if possible
-```
+This flow combines the Q01 features with the normal database operation instead of treating reliability as a separate part of the system.
 
 ---
 
-## 8. Reliability Flow
+## 8. Project Structure
 
-The reliability features are connected to the main application rather than being separate modules.
+The main project structure is:
 
 ```text
-                 Hospital Management System
-                           |
-          +----------------+----------------+
-          |                |                |
-          v                v                v
-     Validation        User Roles       Error Handling
-          |                |                |
-          +----------------+----------------+
-                           |
-                           v
-                     SQLite Database
-                           |
-                    +------+------+
-                    |             |
-                    v             v
-                Audit Log      Backup
+BBAT104_TQM_AU-24-7632/
+│
+├── app/
+│   ├── database/
+│   │   └── db.py
+│   │
+│   ├── models/
+│   │
+│   └── services/
+│       ├── patient_service.py
+│       ├── doctor_service.py
+│       ├── appointment_service.py
+│       ├── medical_record_service.py
+│       ├── bill_service.py
+│       ├── user_service.py
+│       │
+│       ├── backup_service.py
+│       ├── audit_service.py
+│       ├── validation_service.py
+│       ├── error_recovery_service.py
+│       ├── role_service.py
+│       └── reliable_operation_service.py
+│
+├── database/
+│   └── hospital.db
+│
+├── backups/
+│
+├── docs/
+│   ├── ARCHITECTURE.md
+│   ├── DATABASE_DESIGN.md
+│   ├── SRS.md
+│   └── USER_MANUAL.md
+│
+├── tests/
+│   ├── test_crud.py
+│   └── test_q01_reliability.py
+│
+├── README.md
+└── .gitignore
 ```
-
-This structure helps the system prevent errors before they happen and also provides mechanisms to trace and recover from problems when they occur.
 
 ---
 
 ## 9. TQM Integration
 
-The architecture will also support the TQM activities required for the project.
+The architecture supports the TQM requirements of the project.
 
-The system will generate or provide data that can be used for:
+The system provides data and evidence that can later be used for:
 
 * Defect logging
 * Checksheets
@@ -346,26 +457,66 @@ The system will generate or provide data that can be used for:
 * Fishbone analysis
 * PDCA
 
-The purpose is not only to build the software but also to evaluate its quality and identify areas for improvement.
+The reliability features also support important TQM principles such as:
+
+* Error Prevention
+* Fact-Based Decision Making
+* Process-Centric Approach
+* Continuous Improvement
+
+For example, audit logs and test results provide factual information that can be used during quality analysis.
 
 ---
 
-## 10. Future Changes
+## 10. Testing
 
-The architecture may be modified during development if a better structure is required.
+The project includes automated tests for CRUD operations and Q01 reliability features.
 
-For example, additional modules or services may be separated as the application grows.
+The Q01 reliability test suite checks:
 
-Any major architecture change will be documented in the project repository.
+* Input validation
+* Bill validation
+* User role permissions
+* Database backups
+* Audit logs
+* Error recovery and rollback
+
+The current Q01 regression test result is:
+
+```text
+12 tests passed
+0 tests failed
+```
+
+This provides evidence that the implemented reliability features are working with the current service layer.
 
 ---
 
-## 11. Summary
+## 11. Future Development
 
-The Hospital Management System uses a simple Python desktop architecture with CustomTkinter as the interface and SQLite as the database.
+The next stages of the project will focus on completing the desktop interface and the remaining TQM analysis activities.
 
-The main focus of the architecture is reliability.
+These include:
 
-Input validation, user roles, audit logging, automatic backups and error recovery are included around the core hospital management functions.
+* CustomTkinter based GUI
+* SIPOC analysis
+* FMEA and RPN calculation
+* Defect logging
+* Pareto analysis
+* Fishbone analysis
+* Checksheets
+* PDCA based improvement
 
-The architecture is designed to keep the project simple enough for the academic requirements while still demonstrating the TQM principles required by the BBAT104 project.
+Any major architecture changes made during development will be documented in the repository.
+
+---
+
+## 12. Summary
+
+The Hospital Management System uses a simple layered architecture consisting of the user interface, service layer, reliability layer and SQLite database.
+
+The Q01 reliability features are integrated into the database operation process.
+
+Input validation helps prevent incorrect data, user roles restrict unauthorized operations, automatic backups reduce data-loss risk, error recovery handles failed transactions, and audit logging provides traceability.
+
+This architecture keeps the project simple enough for the academic requirements while providing clear evidence of the assigned TQM quality goal: **Improve Reliability**.
