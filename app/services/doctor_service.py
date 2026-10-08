@@ -6,34 +6,30 @@ from app.services.reliable_operation_service import (
 from app.database.db import get_connection
 
 
-def create_patient(data, role="Admin", user_id=None):
-    """Create a new patient and return the generated patient ID."""
+def create_doctor(data, role="Admin", user_id=None):
+    """Create a new doctor."""
 
     def operation(connection):
         cursor = connection.execute(
             """
-            INSERT INTO patients (
-                patient_code,
+            INSERT INTO doctors (
+                doctor_code,
                 name,
-                age,
-                gender,
-                blood_group,
+                specialization,
+                department,
                 phone,
-                address,
-                emergency_contact,
+                email,
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                data["patient_code"],
+                data["doctor_code"],
                 data["name"],
-                data["age"],
-                data["gender"],
-                data.get("blood_group"),
+                data["specialization"],
+                data["department"],
                 data.get("phone"),
-                data.get("address"),
-                data.get("emergency_contact"),
+                data.get("email"),
                 datetime.now().isoformat(timespec="seconds"),
             ),
         )
@@ -43,8 +39,8 @@ def create_patient(data, role="Admin", user_id=None):
     result = execute_reliable_operation(
         operation=operation,
         role=role,
-        permission="create_patients",
-        module="patient",
+        permission="create_doctors",
+        module="doctor",
         operation_name="create",
         data=data,
         user_id=user_id,
@@ -56,13 +52,13 @@ def create_patient(data, role="Admin", user_id=None):
     return result["result"]
 
 
-def get_all_patients(role="Admin"):
-    """Return all patients ordered by their ID."""
+def get_all_doctors(role="Admin"):
+    """Return all doctors ordered by ID."""
 
     if role not in ("Admin", "Doctor", "Staff"):
         return {
             "success": False,
-            "message": "User does not have permission to view patients.",
+            "message": "User does not have permission to view doctors.",
         }
 
     connection = get_connection()
@@ -71,7 +67,7 @@ def get_all_patients(role="Admin"):
         cursor = connection.execute(
             """
             SELECT *
-            FROM patients
+            FROM doctors
             ORDER BY id
             """
         )
@@ -82,34 +78,30 @@ def get_all_patients(role="Admin"):
         connection.close()
 
 
-def update_patient(patient_id, data, role="Admin", user_id=None):
-    """Update an existing patient."""
+def update_doctor(doctor_id, data, role="Admin", user_id=None):
+    """Update an existing doctor."""
 
     def operation(connection):
         cursor = connection.execute(
             """
-            UPDATE patients
+            UPDATE doctors
             SET
-                patient_code = ?,
+                doctor_code = ?,
                 name = ?,
-                age = ?,
-                gender = ?,
-                blood_group = ?,
+                specialization = ?,
+                department = ?,
                 phone = ?,
-                address = ?,
-                emergency_contact = ?
+                email = ?
             WHERE id = ?
             """,
             (
-                data["patient_code"],
+                data["doctor_code"],
                 data["name"],
-                data["age"],
-                data["gender"],
-                data.get("blood_group"),
+                data["specialization"],
+                data["department"],
                 data.get("phone"),
-                data.get("address"),
-                data.get("emergency_contact"),
-                patient_id,
+                data.get("email"),
+                doctor_id,
             ),
         )
 
@@ -118,11 +110,11 @@ def update_patient(patient_id, data, role="Admin", user_id=None):
     result = execute_reliable_operation(
         operation=operation,
         role=role,
-        permission="update_patients",
-        module="patient",
+        permission="update_doctors",
+        module="doctor",
         operation_name="update",
         data=data,
-        record_id=patient_id,
+        record_id=doctor_id,
         user_id=user_id,
     )
 
@@ -132,16 +124,16 @@ def update_patient(patient_id, data, role="Admin", user_id=None):
     return result["result"]
 
 
-def delete_patient(patient_id, role="Admin", user_id=None):
-    """Delete a patient."""
+def delete_doctor(doctor_id, role="Admin", user_id=None):
+    """Delete a doctor."""
 
     def operation(connection):
         cursor = connection.execute(
             """
-            DELETE FROM patients
+            DELETE FROM doctors
             WHERE id = ?
             """,
-            (patient_id,),
+            (doctor_id,),
         )
 
         return cursor.rowcount > 0
@@ -149,10 +141,10 @@ def delete_patient(patient_id, role="Admin", user_id=None):
     result = execute_reliable_operation(
         operation=operation,
         role=role,
-        permission="delete_patients",
-        module="patient",
+        permission="delete_doctors",
+        module="doctor",
         operation_name="delete",
-        record_id=patient_id,
+        record_id=doctor_id,
         user_id=user_id,
         data=None,
     )
