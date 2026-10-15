@@ -106,3 +106,36 @@ def delete_user(user_id):
     conn.close()
 
     return deleted
+
+def authenticate_user(username, password):
+    """Authenticate an active user using the stored password hash."""
+
+    conn = get_connection()
+
+    try:
+        row = conn.execute(
+            """
+            SELECT id, username, password_hash, role, is_active
+            FROM users
+            WHERE username = ?
+            """,
+            (username.strip(),),
+        ).fetchone()
+
+        if row is None:
+            return None
+
+        if not row["is_active"]:
+            return None
+
+        if row["password_hash"] != hash_password(password):
+            return None
+
+        return {
+            "id": row["id"],
+            "username": row["username"],
+            "role": row["role"],
+        }
+
+    finally:
+        conn.close()
