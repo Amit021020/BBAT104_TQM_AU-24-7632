@@ -595,7 +595,7 @@ class HospitalApp(ctk.CTk):
 
                         confirmed = messagebox.askyesno(
                             "Confirm deletion",
-                            f"Delete patient {p['name']} ({p['patient_code']})?",
+                            f"Delete patient {patient['name']} ({patient['patient_code']})?",
                             parent=self,
                         )
 
@@ -604,7 +604,7 @@ class HospitalApp(ctk.CTk):
 
                         try:
                             result = delete_patient(
-                                p["id"],
+                                patient["id"],
                                 role=user["role"],
                                 user_id=user["id"],
                             )

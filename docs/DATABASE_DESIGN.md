@@ -192,43 +192,10 @@ The audit log will be useful for checking what happened when a problem occurs.
 
 ---
 
-## 10. Relationships
+## 10. DESIGN AND ER DIAGRAM
 
-The main relationships between the tables are:
-
-```text
-users
-  |
-  | 1
-  |
-  | many
-audit_logs
-
-
-patients
-  |
-  | 1
-  +--------------------+
-  |                    |
-  | many               | many
-  v                    v
-appointments       medical_records
-  |                    |
-  |                    |
-  +---- doctor --------+
-        |
-        v
-     doctors
-
-
-patients
-  |
-  | 1
-  |
-  | many
-  v
-bills
-```
+![Database Design](./assets/database-design.png)
+![ER Diagram](./assets/ER-diagram.png)
 
 More specifically:
 
