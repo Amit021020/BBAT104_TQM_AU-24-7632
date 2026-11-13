@@ -1,0 +1,115 @@
+
+{% extends "base.html" %}
+
+{% block title %}Doctors | MediCare HMS{% endblock %}
+{% block page_heading %}Doctor Management{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-card">
+
+    <div class="card-heading">
+        <div>
+            <h5>Registered Doctors</h5>
+            <p>Manage hospital doctors and departments.</p>
+        </div>
+
+        {% if session.get('role') == 'Admin' %}
+        <a href="{{ url_for('register_doctor') }}"
+           class="btn btn-primary">
+            <i class="bi bi-person-plus"></i>
+            Register Doctor
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+
+            <thead>
+                <tr>
+                    <th>Doctor Code</th>
+                    <th>Name</th>
+                    <th>Specialization</th>
+                    <th>Department</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for doctor in doctors %}
+                <tr>
+                    <td>
+                        <span class="patient-code">
+                            {{ doctor.doctor_code }}
+                        </span>
+                    </td>
+
+                    <td>
+                        <strong>{{ doctor.name }}</strong>
+                    </td>
+
+                    <td>{{ doctor.specialization }}</td>
+                    <td>{{ doctor.department }}</td>
+                    <td>{{ doctor.phone or 'N/A' }}</td>
+
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+
+                            <a href="{{ url_for('view_doctor', doctor_id=doctor.id) }}"
+                            class="btn btn-sm btn-outline-primary"
+                            title="View Doctor">
+                                <i class="bi bi-eye"></i>
+                            </a>
+
+                            {% if session.get('role') == 'Admin' %}
+
+                            <a href="{{ url_for('edit_doctor', doctor_id=doctor.id) }}"
+                            class="btn btn-sm btn-outline-warning"
+                            title="Edit Doctor">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+
+                            <form method="POST"
+                                action="{{ url_for('remove_doctor', doctor_id=doctor.id) }}"
+                                onsubmit="return confirm('Delete this doctor?');"
+                                class="m-0">
+
+                                <input type="hidden"
+                                    name="csrf_token"
+                                    value="{{ csrf_token() }}">
+
+                                <button type="submit"
+                                        class="btn btn-sm btn-outline-danger"
+                                        title="Delete Doctor">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+
+                            </form>
+
+                            {% endif %}
+
+                        </div>
+                    </td>
+
+                    <td>{{ doctor.email or 'N/A' }}</td>
+                </tr>
+
+                {% else %}
+                <tr>
+                    <td colspan="6"
+                        class="text-center text-muted py-4">
+                        No doctors registered yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}

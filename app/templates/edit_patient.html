@@ -1,0 +1,145 @@
+
+{% extends "base.html" %}
+
+{% block title %}Edit Patient | MediCare HMS{% endblock %}
+
+{% block page_heading %}Edit Patient{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-card">
+
+    <div class="card-heading">
+        <div>
+            <h5>Edit Patient Information</h5>
+            <p>
+                Patient Code:
+                <span class="patient-code">
+                    {{ patient.patient_code }}
+                </span>
+            </p>
+        </div>
+
+        <a href="{{ url_for('view_patient', patient_id=patient.id) }}"
+           class="btn btn-outline-secondary btn-sm">
+            Cancel
+        </a>
+    </div>
+
+    <div class="alert alert-info">
+        Patient ID and Patient Code cannot be modified.
+    </div>
+
+    <form method="POST">
+
+        <input type="hidden"
+               name="csrf_token"
+               value="{{ csrf_token() }}">
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+                <label class="form-label">Full Name *</label>
+                <input
+                    type="text"
+                    name="name"
+                    class="form-control"
+                    value="{{ request.form.get('name', patient.name) }}"
+                    required
+                >
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Age *</label>
+                <input
+                    type="number"
+                    name="age"
+                    min="0"
+                    max="120"
+                    class="form-control"
+                    value="{{ request.form.get('age', patient.age) }}"
+                    required
+                >
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Gender *</label>
+                <select name="gender" class="form-select" required>
+                    {% set selected_gender = request.form.get('gender', patient.gender) %}
+                    {% for gender in ['Male', 'Female', 'Other'] %}
+                    <option value="{{ gender }}"
+                        {% if selected_gender == gender %}selected{% endif %}>
+                        {{ gender }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Blood Group</label>
+                <select name="blood_group" class="form-select">
+                    {% set selected_blood = request.form.get('blood_group', patient.blood_group) %}
+                    <option value="">Select Blood Group</option>
+                    {% for group in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] %}
+                    <option value="{{ group }}"
+                        {% if selected_blood == group %}selected{% endif %}>
+                        {{ group }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Phone</label>
+                <input
+                    type="tel"
+                    name="phone"
+                    pattern="[0-9]{10}"
+                    maxlength="10"
+                    class="form-control"
+                    value="{{ request.form.get('phone', patient.phone or '') }}"
+                >
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Emergency Contact</label>
+                <input
+                    type="tel"
+                    name="emergency_contact"
+                    pattern="[0-9]{10}"
+                    maxlength="10"
+                    class="form-control"
+                    value="{{ request.form.get('emergency_contact', patient.emergency_contact or '') }}"
+                >
+            </div>
+
+            <div class="col-12">
+                <label class="form-label">Address</label>
+                <textarea
+                    name="address"
+                    class="form-control"
+                    rows="3"
+                >{{ request.form.get('address', patient.address or '') }}</textarea>
+            </div>
+
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle"></i>
+                Save Changes
+            </button>
+
+            <a href="{{ url_for('view_patient', patient_id=patient.id) }}"
+               class="btn btn-outline-secondary">
+                Cancel
+            </a>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

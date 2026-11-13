@@ -1,0 +1,132 @@
+
+{% extends "base.html" %}
+
+{% block title %}Doctor Schedule | MediCare HMS{% endblock %}
+{% block page_heading %}Doctor Working Hours{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-card">
+
+    <div class="card-heading">
+        <div>
+            <h5>{{ doctor.name }}</h5>
+            <p>Manage weekly working hours.</p>
+        </div>
+
+        <a href="{{ url_for('view_doctor', doctor_id=doctor.id) }}"
+           class="btn btn-outline-secondary">
+            Back
+        </a>
+    </div>
+
+    <form method="POST" class="row g-3">
+
+        <input type="hidden"
+               name="csrf_token"
+               value="{{ csrf_token() }}">
+
+        <div class="col-md-6">
+            <label class="form-label">Day</label>
+            <select name="day_of_week"
+                    class="form-select"
+                    required>
+                {% for day in [
+                    'Monday', 'Tuesday', 'Wednesday',
+                    'Thursday', 'Friday', 'Saturday', 'Sunday'
+                ] %}
+                <option value="{{ loop.index0 }}">
+                    {{ day }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Start Time</label>
+            <input type="time"
+                   name="start_time"
+                   value="09:00"
+                   class="form-control"
+                   required>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">End Time</label>
+            <input type="time"
+                   name="end_time"
+                   value="17:00"
+                   class="form-control"
+                   required>
+        </div>
+
+        <div class="col-12">
+            <div class="form-check">
+                <input type="checkbox"
+                       name="is_active"
+                       class="form-check-input"
+                       checked>
+                <label class="form-check-label">
+                    Doctor is working on this day
+                </label>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <button class="btn btn-primary" type="submit">
+                Save Working Hours
+            </button>
+        </div>
+    </form>
+
+    <hr class="my-4">
+
+    <h6>Current Weekly Schedule</h6>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Day</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set days = [
+                    'Monday', 'Tuesday', 'Wednesday',
+                    'Thursday', 'Friday', 'Saturday', 'Sunday'
+                ] %}
+
+                {% for item in schedule %}
+                <tr>
+                    <td>{{ days[item.day_of_week] }}</td>
+                    <td>{{ item.start_time }}</td>
+                    <td>{{ item.end_time }}</td>
+                    <td>
+                        {% if item.is_active %}
+                            <span class="badge bg-success">
+                                Working
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">
+                                Off
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted">
+                        No working hours configured yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}

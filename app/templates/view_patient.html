@@ -1,0 +1,88 @@
+
+{% extends "base.html" %}
+
+{% block title %}Patient Details | MediCare HMS{% endblock %}
+
+{% block page_heading %}Patient Details{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-card">
+
+    <div class="card-heading">
+        <div>
+            <h5>{{ patient.name }}</h5>
+            <p>
+                Patient Code:
+                <span class="patient-code">
+                    {{ patient.patient_code }}
+                </span>
+            </p>
+        </div>
+
+        <a href="{{ url_for('patients') }}"
+           class="btn btn-outline-secondary btn-sm">
+            Back to Patients
+        </a>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-md-6">
+            <strong>Patient ID</strong>
+            <p>{{ patient.id }}</p>
+        </div>
+
+        <div class="col-md-6">
+            <strong>Full Name</strong>
+            <p>{{ patient.name }}</p>
+        </div>
+
+        <div class="col-md-6">
+            <strong>Age</strong>
+            <p>{{ patient.age }}</p>
+        </div>
+
+        <div class="col-md-6">
+            <strong>Gender</strong>
+            <p>{{ patient.gender }}</p>
+        </div>
+
+        <div class="col-md-6">
+            <strong>Blood Group</strong>
+            <p>{{ patient.blood_group or 'Not Provided' }}</p>
+        </div>
+
+        <div class="col-md-6">
+            <strong>Phone</strong>
+            <p>{{ patient.phone or 'Not Provided' }}</p>
+        </div>
+
+        <div class="col-md-6">
+            <strong>Emergency Contact</strong>
+            <p>{{ patient.emergency_contact or 'Not Provided' }}</p>
+        </div>
+
+        <div class="col-md-6">
+            <strong>Registered On</strong>
+            <p>{{ patient.created_at }}</p>
+        </div>
+
+        <div class="col-12">
+            <strong>Address</strong>
+            <p>{{ patient.address or 'Not Provided' }}</p>
+        </div>
+
+    </div>
+
+    {% if session.get('role') in ['Admin', 'Staff'] %}
+    <a href="{{ url_for('edit_patient', patient_id=patient.id) }}"
+       class="btn btn-primary mt-3">
+        <i class="bi bi-pencil-square"></i>
+        Edit Patient
+    </a>
+    {% endif %}
+
+</div>
+
+{% endblock %}
