@@ -1,11 +1,11 @@
-import hashlib
+from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
 from app.database.db import get_connection
 
 
 def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+    return generate_password_hash(password)
 
 
 def create_user(data):
@@ -128,7 +128,7 @@ def authenticate_user(username, password):
         if not row["is_active"]:
             return None
 
-        if row["password_hash"] != hash_password(password):
+        if not check_password_hash(row["password_hash"], password):
             return None
 
         return {

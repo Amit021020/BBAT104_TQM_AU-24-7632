@@ -1,0 +1,164 @@
+
+{% extends "base.html" %}
+
+{% block title %}Dashboard | MediCare HMS{% endblock %}
+
+{% block page_heading %}Dashboard Overview{% endblock %}
+
+{% block content %}
+
+<div class="welcome-section mb-4">
+    <h3>Welcome back, {{ session.get('username') }}!</h3>
+    <p class="text-muted mb-0">
+        Here's what's happening at your hospital today.
+    </p>
+</div>
+
+<div class="row g-4 mb-4">
+
+    {% set cards = [
+        ('Patients', stats.patients, 'bi-people', 'blue'),
+        ('Doctors', stats.doctors, 'bi-heart-pulse', 'green'),
+        ('Appointments', stats.appointments, 'bi-calendar-check', 'orange'),
+        ('Medical Records', stats.medical_records, 'bi-file-medical', 'purple'),
+        ('Bills', stats.bills, 'bi-receipt', 'teal')
+    ] %}
+
+    {% for label, value, icon, color in cards %}
+
+    <div class="col-xl-3 col-md-6">
+
+        <div class="stat-card">
+
+            <div class="stat-icon {{ color }}">
+                <i class="bi {{ icon }}"></i>
+            </div>
+
+            <div class="stat-info">
+                <p>{{ label }}</p>
+                <h2>{{ value }}</h2>
+            </div>
+
+        </div>
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+<div class="row g-4">
+
+    <div class="col-lg-8">
+
+        <div class="dashboard-card">
+
+            <div class="card-heading">
+                <div>
+                    <h5>Recent Patients</h5>
+                    <p>Latest patient registrations</p>
+                </div>
+
+                <a href="{{ url_for('patients') }}"
+                   class="btn btn-primary btn-sm">
+                    View All
+                </a>
+            </div>
+
+            <div class="table-responsive">
+
+                <table class="table align-middle">
+
+                    <thead>
+                        <tr>
+                            <th>Patient Code</th>
+                            <th>Name</th>
+                            <th>Age</th>
+                            <th>Gender</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for patient in recent_patients %}
+                        <tr>
+                            <td>
+                                <span class="patient-code">
+                                    {{ patient.patient_code }}
+                                </span>
+                            </td>
+
+                            <td>{{ patient.name }}</td>
+                            <td>{{ patient.age }}</td>
+                            <td>{{ patient.gender }}</td>
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">
+                                No patients registered yet.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-lg-4">
+
+        <div class="dashboard-card">
+
+            <h5>Quality & Reliability</h5>
+
+            <p class="text-muted">
+                Q01 — Improve Reliability
+            </p>
+
+            <div class="quality-item">
+                <i class="bi bi-check-circle-fill text-success"></i>
+                Input Validation
+            </div>
+
+            <div class="quality-item">
+                <i class="bi bi-check-circle-fill text-success"></i>
+                Role-Based Access
+            </div>
+
+            <div class="quality-item">
+                <i class="bi bi-check-circle-fill text-success"></i>
+                Database Backup
+            </div>
+
+            <div class="quality-item">
+                <i class="bi bi-check-circle-fill text-success"></i>
+                Error Recovery
+            </div>
+
+            <div class="quality-item">
+                <i class="bi bi-check-circle-fill text-success"></i>
+                Audit Logging
+            </div>
+
+            <hr>
+
+            <p class="small text-muted mb-0">
+                Reliability features are implemented in the
+                backend. Live monitoring will be added later.
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

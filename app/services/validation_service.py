@@ -13,13 +13,16 @@ def validate_required(data, fields):
     return errors
 
 
+
 def validate_patient(data):
+    """Validate patient information before registration or update."""
     errors = []
 
+    # Patient ID and patient_code are generated automatically.
     errors.extend(
         validate_required(
             data,
-            ["patient_code", "name", "age", "gender"],
+            ["name", "age", "gender"],
         )
     )
 

@@ -1,15 +1,18 @@
+
+from uuid import uuid4
 from datetime import datetime
 
-from app.services.reliable_operation_service import (
-    execute_reliable_operation,
-)
+from app.services.reliable_operation_service import execute_reliable_operation
 from app.database.db import get_connection
 
 
 def create_patient(data, role="Admin", user_id=None):
-    """Create a new patient and return the generated patient ID."""
+    """Create a patient with an automatically generated ID and code."""
 
     def operation(connection):
+        # Temporary unique code satisfies the database UNIQUE constraint.
+        temporary_code = f"TMP-{uuid4().hex}"
+
         cursor = connection.execute(
             """
             INSERT INTO patients (
@@ -26,7 +29,7 @@ def create_patient(data, role="Admin", user_id=None):
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                data["patient_code"],
+                temporary_code,
                 data["name"],
                 data["age"],
                 data["gender"],
@@ -38,8 +41,25 @@ def create_patient(data, role="Admin", user_id=None):
             ),
         )
 
-        return cursor.lastrowid
+        # SQLite generates the numeric patient ID.
+        patient_id = cursor.lastrowid
 
+        # Generate a readable code from the database ID.
+        patient_code = f"PAT-{patient_id:04d}"
+
+        connection.execute(
+            """
+            UPDATE patients
+            SET patient_code = ?
+            WHERE id = ?
+            """,
+            (patient_code, patient_id),
+        )
+
+        return patient_id
+
+    # The reliability layer handles permissions, validation,
+    # backups, audit logging and error recovery.
     result = execute_reliable_operation(
         operation=operation,
         role=role,
@@ -85,12 +105,12 @@ def get_all_patients(role="Admin"):
 def update_patient(patient_id, data, role="Admin", user_id=None):
     """Update an existing patient."""
 
+   
     def operation(connection):
         cursor = connection.execute(
             """
             UPDATE patients
             SET
-                patient_code = ?,
                 name = ?,
                 age = ?,
                 gender = ?,
@@ -101,7 +121,6 @@ def update_patient(patient_id, data, role="Admin", user_id=None):
             WHERE id = ?
             """,
             (
-                data["patient_code"],
                 data["name"],
                 data["age"],
                 data["gender"],
@@ -114,6 +133,7 @@ def update_patient(patient_id, data, role="Admin", user_id=None):
         )
 
         return cursor.rowcount > 0
+
 
     result = execute_reliable_operation(
         operation=operation,

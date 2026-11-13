@@ -1,25 +1,29 @@
-# Python
-__pycache__/
-*.py[cod]
-*.so
-
 # Virtual environment
 .venv/
+.venv-old/
 
-# SQLite database
-*.db
-*.sqlite
-*.sqlite3
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
 
-# Runtime files
-logs/*
-backups/*
-
-# Environment variables
+# Local configuration
 .env
+.env.*
+!.env.example
 
-# IDE
-.vscode/
+# SQLite database files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
 
-# OS
+# Generated backups
+backups/*.db
+
+# Logs
+logs/*.log
+
+# OS and editor files
 .DS_Store
+.vscode/

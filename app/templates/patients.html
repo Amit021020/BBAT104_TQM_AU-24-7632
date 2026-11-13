@@ -1,0 +1,71 @@
+
+{% extends "base.html" %}
+
+{% block title %}Patients | MediCare HMS{% endblock %}
+
+{% block page_heading %}Patient Management{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-card">
+
+    <div class="card-heading">
+        <div>
+            <h5>Registered Patients</h5>
+            <p>View and manage hospital patient records.</p>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+
+        <table class="table align-middle">
+
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Patient Code</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Phone</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for patient in patients %}
+
+                <tr>
+                    <td>{{ patient.id }}</td>
+
+                    <td>
+                        <span class="patient-code">
+                            {{ patient.patient_code }}
+                        </span>
+                    </td>
+
+                    <td>{{ patient.name }}</td>
+                    <td>{{ patient.age }}</td>
+                    <td>{{ patient.gender }}</td>
+                    <td>{{ patient.phone or 'N/A' }}</td>
+                </tr>
+
+                {% else %}
+
+                <tr>
+                    <td colspan="6" class="text-center text-muted">
+                        No patients registered.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}
