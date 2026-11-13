@@ -2,15 +2,97 @@
 from uuid import uuid4
 from datetime import datetime
 
-from app.services.reliable_operation_service import execute_reliable_operation
 from app.database.db import get_connection
+from app.services.reliable_operation_service import (
+    execute_reliable_operation,
+)
 
+
+# --------------------------------------------------
+# Custom Exceptions
+# --------------------------------------------------
+
+class DuplicatePatientError(Exception):
+    """Raised when a possible duplicate patient exists."""
+    pass
+
+
+# --------------------------------------------------
+# Helper Functions
+# --------------------------------------------------
+
+def normalize_patient_name(name):
+    """Normalize patient names for duplicate comparison."""
+    return " ".join(str(name).strip().casefold().split())
+
+
+def find_duplicate_patient(
+    connection,
+    name,
+    phone,
+    exclude_id=None,
+):
+    """
+    Find a possible duplicate using normalized name
+    and phone number.
+    """
+
+    if not phone or not str(phone).strip():
+        return None
+
+    normalized_name = normalize_patient_name(name)
+    normalized_phone = str(phone).strip()
+
+    rows = connection.execute(
+        """
+        SELECT id, patient_code, name, phone
+        FROM patients
+        WHERE phone = ?
+        """,
+        (normalized_phone,),
+    ).fetchall()
+
+    for row in rows:
+        if exclude_id is not None and row["id"] == exclude_id:
+            continue
+
+        if normalize_patient_name(row["name"]) == normalized_name:
+            return dict(row)
+
+    return None
+
+
+# --------------------------------------------------
+# Create Patient
+# --------------------------------------------------
 
 def create_patient(data, role="Admin", user_id=None):
-    """Create a patient with an automatically generated ID and code."""
+    """
+    Create a patient with automatically generated
+    database ID and patient code.
+    """
 
     def operation(connection):
-        # Temporary unique code satisfies the database UNIQUE constraint.
+
+        # Acquire the SQLite write reservation before
+        # checking for duplicates.
+        connection.execute("BEGIN IMMEDIATE")
+
+        duplicate = find_duplicate_patient(
+            connection,
+            data["name"],
+            data.get("phone"),
+        )
+
+        if duplicate:
+            raise DuplicatePatientError(
+                f"Possible duplicate patient: "
+                f"{duplicate['patient_code']} "
+                f"(ID: {duplicate['id']})."
+            )
+
+        # Temporary unique code satisfies the
+        # NOT NULL and UNIQUE database constraints.
         temporary_code = f"TMP-{uuid4().hex}"
 
         cursor = connection.execute(
@@ -31,7 +113,7 @@ def create_patient(data, role="Admin", user_id=None):
             (
                 temporary_code,
                 data["name"],
-                data["age"],
+                int(data["age"]),
                 data["gender"],
                 data.get("blood_group"),
                 data.get("phone"),
@@ -41,10 +123,7 @@ def create_patient(data, role="Admin", user_id=None):
             ),
         )
 
-        # SQLite generates the numeric patient ID.
         patient_id = cursor.lastrowid
-
-        # Generate a readable code from the database ID.
         patient_code = f"PAT-{patient_id:04d}"
 
         connection.execute(
@@ -58,8 +137,6 @@ def create_patient(data, role="Admin", user_id=None):
 
         return patient_id
 
-    # The reliability layer handles permissions, validation,
-    # backups, audit logging and error recovery.
     result = execute_reliable_operation(
         operation=operation,
         role=role,
@@ -76,37 +153,92 @@ def create_patient(data, role="Admin", user_id=None):
     return result["result"]
 
 
+# --------------------------------------------------
+# Read Patients
+# --------------------------------------------------
+
 def get_all_patients(role="Admin"):
-    """Return all patients ordered by their ID."""
+    """Return all patients ordered by ID."""
 
     if role not in ("Admin", "Doctor", "Staff"):
         return {
             "success": False,
-            "message": "User does not have permission to view patients.",
+            "message": (
+                "User does not have permission "
+                "to view patients."
+            ),
         }
 
     connection = get_connection()
 
     try:
-        cursor = connection.execute(
+        return connection.execute(
             """
             SELECT *
             FROM patients
             ORDER BY id
             """
-        )
-
-        return cursor.fetchall()
+        ).fetchall()
 
     finally:
         connection.close()
 
 
-def update_patient(patient_id, data, role="Admin", user_id=None):
-    """Update an existing patient."""
+def get_patient_by_id(patient_id, role="Admin"):
+    """Return a single patient by ID."""
 
-   
+    if role not in ("Admin", "Doctor", "Staff"):
+        return {
+            "success": False,
+            "message": "Permission denied.",
+        }
+
+    connection = get_connection()
+
+    try:
+        return connection.execute(
+            """
+            SELECT *
+            FROM patients
+            WHERE id = ?
+            """,
+            (patient_id,),
+        ).fetchone()
+
+    finally:
+        connection.close()
+
+
+# --------------------------------------------------
+# Update Patient
+# --------------------------------------------------
+
+def update_patient(patient_id, data, role="Admin", user_id=None):
+    """
+    Update patient details while checking for
+    duplicate records.
+    """
+
     def operation(connection):
+
+        # Serialize competing writes before the
+        # duplicate check.
+        connection.execute("BEGIN IMMEDIATE")
+
+        duplicate = find_duplicate_patient(
+            connection,
+            data["name"],
+            data.get("phone"),
+            exclude_id=patient_id,
+        )
+
+        if duplicate:
+            raise DuplicatePatientError(
+                f"Possible duplicate patient: "
+                f"{duplicate['patient_code']} "
+                f"(ID: {duplicate['id']})."
+            )
+
         cursor = connection.execute(
             """
             UPDATE patients
@@ -122,7 +254,7 @@ def update_patient(patient_id, data, role="Admin", user_id=None):
             """,
             (
                 data["name"],
-                data["age"],
+                int(data["age"]),
                 data["gender"],
                 data.get("blood_group"),
                 data.get("phone"),
@@ -133,7 +265,6 @@ def update_patient(patient_id, data, role="Admin", user_id=None):
         )
 
         return cursor.rowcount > 0
-
 
     result = execute_reliable_operation(
         operation=operation,
@@ -152,10 +283,38 @@ def update_patient(patient_id, data, role="Admin", user_id=None):
     return result["result"]
 
 
+# --------------------------------------------------
+# Delete Patient
+# --------------------------------------------------
+
 def delete_patient(patient_id, role="Admin", user_id=None):
-    """Delete a patient."""
+    """Delete a patient if no dependent records exist."""
 
     def operation(connection):
+
+        # Prevent deleting patients with related data.
+        related_tables = (
+            "appointments",
+            "medical_records",
+            "bills",
+        )
+
+        for table in related_tables:
+            count = connection.execute(
+                f"""
+                SELECT COUNT(*)
+                FROM {table}
+                WHERE patient_id = ?
+                """,
+                (patient_id,),
+            ).fetchone()[0]
+
+            if count > 0:
+                raise ValueError(
+                    "Cannot delete patient because "
+                    f"related records exist in {table}."
+                )
+
         cursor = connection.execute(
             """
             DELETE FROM patients
