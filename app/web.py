@@ -17,7 +17,7 @@ from flask_wtf.csrf import CSRFProtect
 
 from app.database.db import initialize_database, get_connection
 from app.services.user_service import authenticate_user
-from app.services.patient_service import get_all_patients
+from app.services.patient_service import get_all_patients , create_patient
 
 
 app = Flask(__name__)
@@ -151,6 +151,58 @@ def patients():
 
     return render_template("patients.html", patients=records)
 
+
+
+@app.route("/patients/register", methods=["GET", "POST"])
+@login_required
+def register_patient():
+
+    # Check permission before displaying or processing the form.
+    if session.get("role") not in ("Admin", "Staff"):
+        abort(403)
+
+    if request.method == "POST":
+
+        data = {
+            "name": request.form.get("name", "").strip(),
+            "age": request.form.get("age", "").strip(),
+            "gender": request.form.get("gender", "").strip(),
+            "blood_group": request.form.get("blood_group", "").strip(),
+            "phone": request.form.get("phone", "").strip(),
+            "address": request.form.get("address", "").strip(),
+            "emergency_contact": request.form.get(
+                "emergency_contact", ""
+            ).strip(),
+        }
+
+        result = create_patient(
+            data=data,
+            role=session["role"],
+            user_id=session["user_id"],
+        )
+
+        # The service returns an integer on success
+        # and an error dictionary on failure.
+        if isinstance(result, dict):
+            message = result.get(
+                "message", "Patient registration failed."
+            )
+
+            errors = result.get("errors", [])
+            if errors:
+                message += " " + " ".join(errors)
+
+            flash(message, "danger")
+
+        else:
+            flash(
+                f"Patient registered successfully! ID: {result}",
+                "success",
+            )
+
+            return redirect(url_for("patients"))
+
+    return render_template("register_patient.html")
 
 if __name__ == "__main__":
     app.run(debug=True, host="127.0.0.1")
